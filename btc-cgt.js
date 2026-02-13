@@ -2,8 +2,12 @@ const fs = require('fs');
 const assert = require('assert');
 const { parse } = require('csv-parse/sync');
 const Big = require('big.js');
-const debug = require('debug')('btc-cgt:matching');
-const debugDays = require('debug')('btc-cgt:days');
+const debug = require('debug');
+
+// debug streams
+const debugMatching = debug('btc-cgt:matching');
+const debugDays = debug('btc-cgt:days');
+const debugInput = debug('btc-cgt:input');
 
 // add safeguard to avoid causing precision loss
 Big.strict = true;
@@ -164,6 +168,7 @@ let trades = records
   }))
   .filter(r => ['BUY', 'SELL'].includes(r['Transaction Type']))
   .map(r => {
+    debugInput(r);
     const tsToDate = (given) => {
       const split = given.split(' ');
       return `${split[0]}T${split[1]}Z`;
@@ -173,6 +178,9 @@ let trades = records
     const qty = toBig(r['Quantity Transacted']).abs(); // quantity negative for sales
     const price = toBig(r['Price']);
     const fee = toBig(r['Fees and/or Spread']);
+    // Represents GBP spent (BUY) or received (SELL). i.e.
+    // for BUY, total = BTC cost + Fee
+    // for SELL, total = sale proceeds - Fee
     const total = toBig(r['Total (inclusive of fees and/or spread)']);
 
     return {
@@ -181,7 +189,7 @@ let trades = records
       type: r['Transaction Type'],
       qty,
       fee,
-      total, // GBP spent (BUY) or received (SELL) AFTER fee depending on export
+      total,
       description: r.Notes,
       raw: r
     };
@@ -225,7 +233,7 @@ for (let i = 0; i < trades.length; i++) {
       b.qty.gt(ZERO)
     );
 
-    debug('There are %d same day buys for sell %s', sameDayBuys.length, t.id);
+    debugMatching('There are %d same day buys for sell %s', sameDayBuys.length, t.id);
     if (sameDayBuys.length) throw new Error('Same day logic not implemented');
     /*
     for (const b of sameDayBuys) {
@@ -242,7 +250,7 @@ for (let i = 0; i < trades.length; i++) {
     */
 
     // ===== 2. 30-DAY MATCHING =====
-    debug('There are %d future buys for sell %s, looking to match quantity: %s', futureBuys.length, t.id, remaining);
+    debugMatching('There are %d future buys for sell %s, looking to match quantity: %s', futureBuys.length, t.id, remaining);
     for (const b of futureBuys) {
       if (remaining.lte(ZERO)) break;
       if (b.remaining.lte(ZERO)) continue;
@@ -251,8 +259,7 @@ for (let i = 0; i < trades.length; i++) {
       debugDays('Days between sell:%s and buy:%s is %d', t.id, b.id, d);
       if (d > 0 && d <= 30) {
         const matchQty = bigMin(remaining, b.remaining);
-        debug('matched %s from buy:%s (within 30 days)', matchQty, b.id);
-        const costPortion = b.total.div(b.qty).times(matchQty);
+        debugMatching('matched %s from buy:%s (within 30 days)', matchQty, b.id);
         log();
         log(
           '%s of this quantity is matched with the buy on %s',
@@ -290,7 +297,7 @@ for (let i = 0; i < trades.length; i++) {
 
         b.remaining = b.remaining.minus(matchQty);
         remaining = remaining.minus(matchQty);
-        debug('buy:%s has %s remaining, we still need to match %s from sale', b.id, b.remaining, remaining);
+        debugMatching('buy:%s has %s remaining, we still need to match %s from sale', b.id, b.remaining, remaining);
       }
     } // foreach futureBuys
 
@@ -324,7 +331,7 @@ for (let i = 0; i < trades.length; i++) {
     }
 
     const unmatchedQty = buyWithRemaining.remaining;
-    debug('Considering adding to pool. Unmatched quantity: %s', unmatchedQty);
+    debugMatching('Considering adding to pool. Unmatched quantity: %s', unmatchedQty);
     // two cases here
     // Full match (remaining === 0)
     // partial match (remaining !== t.qty)
@@ -341,7 +348,7 @@ for (let i = 0; i < trades.length; i++) {
           unmatchedQty.toFixed(8),
         );
       }
-      debug('Costing: total=%s, quantity=%s, of which unmatched=%s', t.total, t.qty, unmatchedQty);
+      debugMatching('Costing: total=%s, quantity=%s, of which unmatched=%s', t.total, t.qty, unmatchedQty);
       const costPortion = t.total.div(t.qty).times(unmatchedQty);
 
       addToPool(unmatchedQty, costPortion);
