@@ -5,6 +5,14 @@ const Big = require('big.js');
 const debug = require('debug')('btc-cgt:matching');
 const debugDays = require('debug')('btc-cgt:days');
 
+// add safeguard to avoid causing precision loss
+Big.strict = true;
+Big.DP = 40;
+// Default rounding method is Big.roundHalfUp
+// Uncomment to switch to rounding up
+// Big.RM = Big.roundUp;
+const ZERO = new Big('0');
+
 // ===== CONFIG =====
 const FILE = './without-deposits.csv';
 const ASSET = 'BTC';
@@ -44,7 +52,7 @@ function formatDate (date = new Date()) {
 
 function formatGbp (given) {
   assert(given instanceof Big, 'formatGbp() given not instanceof Big');
-  const isNegative = given.lt(0);
+  const isNegative = given.lt(ZERO);
   return [
     isNegative ? '-' : '',
     '£',
@@ -176,10 +184,10 @@ let trades = records
   .sort((a, b) => a.date - b.date);
 
 // ===== MATCHING STRUCTURES =====
-let poolQty = new Big(0);
-let poolCost = new Big(0);
-let buyFees = new Big(0);
-let sellFees = new Big(0);
+let poolQty = ZERO;
+let poolCost = ZERO;
+let buyFees = ZERO;
+let sellFees = ZERO;
 
 let futureBuys = []; // for 30-day matching
 let results = [];
@@ -203,20 +211,20 @@ for (let i = 0; i < trades.length; i++) {
 
     let remaining = t.qty;
     let disposalProceeds = t.total.abs(); // already net of fee
-    let gain = new Big(0);
+    let gain = ZERO;
 
     // ===== 1. SAME-DAY MATCHING =====
     const sameDayBuys = trades.filter(b =>
       b.type === 'BUY' &&
       b.date.toDateString() === t.date.toDateString() &&
-      b.qty.gt(0)
+      b.qty.gt(ZERO)
     );
 
     debug('There are %d same day buys for sell %s', sameDayBuys.length, t.id);
     if (sameDayBuys.length) throw new Error('Same day logic not implemented');
     /*
     for (const b of sameDayBuys) {
-      if (remaining.lte(0)) break;
+      if (remaining.lte(ZERO)) break;
 
       const matchQty = bigMin(remaining, b.qty);
       const costPortion = b.total.div(b.qty).times(matchQty);
@@ -231,8 +239,8 @@ for (let i = 0; i < trades.length; i++) {
     // ===== 2. 30-DAY MATCHING =====
     debug('There are %d future buys for sell %s, looking to match quantity: %s', futureBuys.length, t.id, remaining);
     for (const b of futureBuys) {
-      if (remaining.lte(0)) break;
-      if (b.remaining.lte(0)) continue;
+      if (remaining.lte(ZERO)) break;
+      if (b.remaining.lte(ZERO)) continue;
 
       const d = daysBetween(t.date, b.date);
       debugDays('Days between sell:%s and buy:%s is %d', t.id, b.id, d);
@@ -278,16 +286,16 @@ for (let i = 0; i < trades.length; i++) {
     } // foreach futureBuys
 
     // ===== 3. SECTION 104 POOL =====
-    if (remaining.gt(0)) {
+    if (remaining.gt(ZERO)) {
       throw new Error('Disposal -> section 104 considerations are not tested');
-      const poolCostPerBTC = poolQty.gt(0) ? poolCost.div(poolQty) : new Big(0);
+      const poolCostPerBTC = poolQty.gt(0) ? poolCost.div(poolQty) : ZERO;
       const costPortion = poolCostPerBTC.times(remaining);
 
       gain = gain.plus(disposalProceeds.div(t.qty).times(remaining)).minus(costPortion);
 
       poolQty = poolQty.minus(remaining);
       poolCost = poolCost.minus(costPortion);
-      remaining = new Big(0);
+      remaining = ZERO;
     }
 
     results.push({
@@ -311,10 +319,10 @@ for (let i = 0; i < trades.length; i++) {
     // two cases here
     // Full match (remaining === 0)
     // partial match (remaining !== t.qty)
-    if (unmatchedQty.eq(0)) {
+    if (unmatchedQty.eq(ZERO)) {
       log();
       log('Not considered wrt. Section 104 Holding because of previous disposal');
-    } else if (unmatchedQty.gt(0)) {
+    } else if (unmatchedQty.gt(ZERO)) {
       if (!unmatchedQty.eq(t.qty)) {
         const previouslyMatched = t.qty.minus(unmatchedQty);
         log();
@@ -338,7 +346,7 @@ for (let i = 0; i < trades.length; i++) {
 
 // ===== OUTPUT =====
 console.log('Disposals:');
-let totalGain = new Big(0);
+let totalGain = ZERO;
 results.forEach(r => {
   console.log(`${r.date} | Sold ${r.qty} BTC | Gain/Loss £${r.gain.toFixed(2)}`);
   totalGain = totalGain.plus(r.gain);
