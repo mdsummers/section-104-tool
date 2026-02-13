@@ -1,5 +1,7 @@
 const fs = require('fs');
+const assert = require('assert');
 const { parse } = require('csv-parse/sync');
+const Big = require('big.js');
 const debug = require('debug')('btc-cgt:matching');
 const debugDays = require('debug')('btc-cgt:days');
 
@@ -11,9 +13,16 @@ const ASSET = 'BTC';
 process.env.TZ = 'Europe/London';
 
 // ===== HELPERS =====
-function toNumber(v) {
+function toBig (v) {
   if (!v) return 0;
-  return Number(String(v).replace(/[£,]/g, '').trim());
+  return new Big(String(v).replace(/[£,]/g, '').trim());
+}
+
+// Math.min equivalent
+function bigMin (a, b) {
+  assert(a instanceof Big, 'bigMin() a not instanceof Big');
+  assert(b instanceof Big, 'bigMin() b not instanceof Big');
+  return a.lt(b) ? a : b;
 }
 
 function daysBetween(a, b) {
@@ -34,11 +43,12 @@ function formatDate (date = new Date()) {
 }
 
 function formatGbp (given) {
-  const isNegative = given < 0;
+  assert(given instanceof Big, 'formatGbp() given not instanceof Big');
+  const isNegative = given.lt(0);
   return [
     isNegative ? '-' : '',
     '£',
-    Math.abs(given).toFixed(2)
+    given.abs().toFixed(2)
   ].join('');
 }
 
@@ -55,6 +65,8 @@ function logColumns (cols) {
 // POOL MANAGEMENT
 let poolFormed = false;
 function addToPool (qty, cost) {
+  assert(qty instanceof Big, 'addToPool() qty not instanceof Big');
+  assert(cost instanceof Big, 'addToPool() cost not instanceof Big');
   log();
   if (!poolFormed) {
     poolFormed = true;
@@ -103,8 +115,8 @@ function addToPool (qty, cost) {
     '-'.repeat(COLSIZE),
     '-'.repeat(COLSIZE),
   ]);
-  poolQty += qty;
-  poolCost += cost;
+  poolQty = poolQty.plus(qty);
+  poolCost = poolCost.plus(cost);
   logColumns([
     'Carried forward',
     '',
@@ -145,10 +157,10 @@ let trades = records
     };
     const date = new Date(tsToDate(r['Timestamp']));
 
-    const qty = Math.abs(toNumber(r['Quantity Transacted'])); // quantity negative for sales
-    const price = toNumber(r['Price']);
-    const fee = toNumber(r['Fees and/or Spread']);
-    const total = toNumber(r['Total (inclusive of fees and/or spread)']);
+    const qty = toBig(r['Quantity Transacted']).abs(); // quantity negative for sales
+    const price = toBig(r['Price']);
+    const fee = toBig(r['Fees and/or Spread']);
+    const total = toBig(r['Total (inclusive of fees and/or spread)']);
 
     return {
       id: r.ID,
@@ -164,10 +176,10 @@ let trades = records
   .sort((a, b) => a.date - b.date);
 
 // ===== MATCHING STRUCTURES =====
-let poolQty = 0;
-let poolCost = 0;
-let buyFees = 0;
-let sellFees = 0;
+let poolQty = new Big(0);
+let poolCost = new Big(0);
+let buyFees = new Big(0);
+let sellFees = new Big(0);
 
 let futureBuys = []; // for 30-day matching
 let results = [];
@@ -187,47 +199,47 @@ for (let i = 0; i < trades.length; i++) {
 
   if (t.type === 'SELL') {
     // add to the fee straightaway
-    sellFees += t.fee;
+    sellFees = sellFees.plus(t.fee);
 
     let remaining = t.qty;
-    let disposalProceeds = Math.abs(t.total); // already net of fee
-    let gain = 0;
+    let disposalProceeds = t.total.abs(); // already net of fee
+    let gain = new Big(0);
 
     // ===== 1. SAME-DAY MATCHING =====
     const sameDayBuys = trades.filter(b =>
       b.type === 'BUY' &&
       b.date.toDateString() === t.date.toDateString() &&
-      b.qty > 0
+      b.qty.gt(0)
     );
 
     debug('There are %d same day buys for sell %s', sameDayBuys.length, t.id);
     if (sameDayBuys.length) throw new Error('Same day logic not implemented');
     /*
     for (const b of sameDayBuys) {
-      if (remaining <= 0) break;
+      if (remaining.lte(0)) break;
 
-      const matchQty = Math.min(remaining, b.qty);
-      const costPortion = (b.total / b.qty) * matchQty;
+      const matchQty = bigMin(remaining, b.qty);
+      const costPortion = b.total.div(b.qty).times(matchQty);
 
-      gain += (disposalProceeds / t.qty) * matchQty - costPortion;
+      gain = gain.plus(disposalProceeds.div(t.qty).times(matchQty)).minus(costPortion);
 
-      b.qty -= matchQty;
-      remaining -= matchQty;
+      b.qty = b.qty.minus(matchQty);
+      remaining = remaining.minus(matchQty);
     }
     */
 
     // ===== 2. 30-DAY MATCHING =====
     debug('There are %d future buys for sell %s, looking to match quantity: %s', futureBuys.length, t.id, remaining);
     for (const b of futureBuys) {
-      if (remaining <= 0) break;
-      if (b.remaining <= 0) continue;
+      if (remaining.lte(0)) break;
+      if (b.remaining.lte(0)) continue;
 
       const d = daysBetween(t.date, b.date);
       debugDays('Days between sell:%s and buy:%s is %d', t.id, b.id, d);
       if (d > 0 && d <= 30) {
-        const matchQty = Math.min(remaining, b.remaining);
+        const matchQty = bigMin(remaining, b.remaining);
         debug('matched %s from buy:%s (within 30 days)', matchQty, b.id);
-        const costPortion = (b.total / b.qty) * matchQty;
+        const costPortion = b.total.div(b.qty).times(matchQty);
         log();
         log(
           '%s of this quantity is matched with the buy on %s',
@@ -236,46 +248,46 @@ for (let i = 0; i < trades.length; i++) {
         );
 
         // disposalProceeds already has fee removed
-        const proportionOfFullDisposal = matchQty / t.qty;
-        const matchedDisposalProceeds = proportionOfFullDisposal * disposalProceeds;
+        const proportionOfFullDisposal = matchQty.div(t.qty);
+        const matchedDisposalProceeds = proportionOfFullDisposal.times(disposalProceeds);
         logColumns([
           'Disposal Proceeds',
           `(apportioned ${matchQty.toFixed(8)} / ${t.qty.toFixed(8)} * ${disposalProceeds.toFixed(2)})`,
           formatGbp(matchedDisposalProceeds)
         ]);
 
-        const proportionOfMatchedBuy = matchQty / b.qty;
-        const allowableCost = proportionOfMatchedBuy * b.total
+        const proportionOfMatchedBuy = matchQty.div(b.qty);
+        const allowableCost = proportionOfMatchedBuy.times(b.total);
         logColumns([
           'Allowable cost',
           `(apportioned ${matchQty.toFixed(8)} / ${b.qty.toFixed(8)} * ${b.total.toFixed(2)})`,
           formatGbp(allowableCost)
         ]);
-        const thisGain = matchedDisposalProceeds - allowableCost;
-        gain += thisGain;
+        const thisGain = matchedDisposalProceeds.minus(allowableCost);
+        gain = gain.plus(thisGain);
         logColumns([
           'Total gain',
           '(Disposal proceeds - Allowable cost)',
           formatGbp(thisGain)
         ]);
 
-        b.remaining -= matchQty;
-        remaining -= matchQty;
+        b.remaining = b.remaining.minus(matchQty);
+        remaining = remaining.minus(matchQty);
         debug('buy:%s has %s remaining, we still need to match %s from sale', b.id, b.remaining, remaining);
       }
     } // foreach futureBuys
 
     // ===== 3. SECTION 104 POOL =====
-    if (remaining > 0) {
+    if (remaining.gt(0)) {
       throw new Error('Disposal -> section 104 considerations are not tested');
-      const poolCostPerBTC = poolQty > 0 ? poolCost / poolQty : 0;
-      const costPortion = poolCostPerBTC * remaining;
+      const poolCostPerBTC = poolQty.gt(0) ? poolCost.div(poolQty) : new Big(0);
+      const costPortion = poolCostPerBTC.times(remaining);
 
-      gain += (disposalProceeds / t.qty) * remaining - costPortion;
+      gain = gain.plus(disposalProceeds.div(t.qty).times(remaining)).minus(costPortion);
 
-      poolQty -= remaining;
-      poolCost -= costPortion;
-      remaining = 0;
+      poolQty = poolQty.minus(remaining);
+      poolCost = poolCost.minus(costPortion);
+      remaining = new Big(0);
     }
 
     results.push({
@@ -288,7 +300,7 @@ for (let i = 0; i < trades.length; i++) {
 
   // ===== AFTER PROCESSING, ADD BUYS TO POOL (UNMATCHED ONLY) =====
   if (t.type === 'BUY') {
-    buyFees += t.fee;
+    buyFees = buyFees.plus(t.fee);
     const buyWithRemaining = futureBuys.find(b => b.id === t.id);
     if (!buyWithRemaining) {
       throw new Error('There should always be a copy in futureBuys');
@@ -299,12 +311,12 @@ for (let i = 0; i < trades.length; i++) {
     // two cases here
     // Full match (remaining === 0)
     // partial match (remaining !== t.qty)
-    if (unmatchedQty === 0) {
+    if (unmatchedQty.eq(0)) {
       log();
       log('Not considered wrt. Section 104 Holding because of previous disposal');
-    } else if (unmatchedQty > 0) {
-      if (unmatchedQty !== t.qty) {
-        const previouslyMatched = t.qty - unmatchedQty;
+    } else if (unmatchedQty.gt(0)) {
+      if (!unmatchedQty.eq(t.qty)) {
+        const previouslyMatched = t.qty.minus(unmatchedQty);
         log();
         log(
           'Quantity %s was previously matched under 30 day rules, leaving %s for Section 104 consideration',
@@ -313,7 +325,7 @@ for (let i = 0; i < trades.length; i++) {
         );
       }
       debug('Costing: total=%s, quantity=%s, of which unmatched=%s', t.total, t.qty, unmatchedQty);
-      const costPortion = (t.total / t.qty) * unmatchedQty;
+      const costPortion = t.total.div(t.qty).times(unmatchedQty);
 
       addToPool(unmatchedQty, costPortion);
     } else {
@@ -326,15 +338,15 @@ for (let i = 0; i < trades.length; i++) {
 
 // ===== OUTPUT =====
 console.log('Disposals:');
-let totalGain = 0;
+let totalGain = new Big(0);
 results.forEach(r => {
   console.log(`${r.date} | Sold ${r.qty} BTC | Gain/Loss £${r.gain.toFixed(2)}`);
-  totalGain += r.gain;
+  totalGain = totalGain.plus(r.gain);
 });
 console.log('Total gain over timeframe:', formatGbp(totalGain));
 
 console.log('\nSection 104 Pool:');
 console.log(`BTC: ${poolQty}`);
 console.log(`Cost: £${poolCost.toFixed(2)}`);
-console.log(`Fees: £${(buyFees + sellFees).toFixed(2)}`);
+console.log(`Fees: £${(buyFees.plus(sellFees)).toFixed(2)}`);
 console.log(`of which buy/sell: £${buyFees.toFixed(2)}/£${sellFees.toFixed(2)}`);
