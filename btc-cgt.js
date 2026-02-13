@@ -2,7 +2,6 @@ const fs = require('fs');
 const { parse } = require('csv-parse/sync');
 const debug = require('debug')('btc-cgt:matching');
 const debugDays = require('debug')('btc-cgt:days');
-const debugGain = require('debug')('btc-cgt:gain');
 
 // ===== CONFIG =====
 const FILE = './without-deposits.csv';
@@ -21,7 +20,7 @@ function daysBetween(a, b) {
   return Math.floor((b - a) / (1000 * 60 * 60 * 24));
 }
 
-function formatDate(date = new Date()) {
+function formatDate (date = new Date()) {
   const formatter = new Intl.DateTimeFormat('en-GB', {
     month: 'short',
     day: '2-digit',
@@ -32,6 +31,15 @@ function formatDate(date = new Date()) {
 
   // "Dec 21, 13:01" → remove the comma
   return formatter.format(date).replace(',', ' at');
+}
+
+function formatGbp (given) {
+  const isNegative = given < 0;
+  return [
+    isNegative ? '-' : '',
+    '£',
+    Math.abs(given).toFixed(2)
+  ].join('');
 }
 
 function log (...args) {
@@ -64,7 +72,7 @@ function addToPool (qty, cost) {
       '',
       '',
       poolQty.toFixed(8),
-      poolCost.toFixed(2),
+      formatGbp(poolCost)
     ]);
     log();
 
@@ -81,13 +89,13 @@ function addToPool (qty, cost) {
     'Brought forward',
     '',
     poolQty.toFixed(8),
-    poolCost.toFixed(2),
+    formatGbp(poolCost)
   ]);
   logColumns([
     '',
     'plus',
     qty.toFixed(8),
-    cost.toFixed(2),
+    formatGbp(cost),
   ]);
   logColumns([
     '',
@@ -101,7 +109,7 @@ function addToPool (qty, cost) {
     'Carried forward',
     '',
     poolQty.toFixed(8),
-    poolCost.toFixed(2),
+    formatGbp(poolCost)
   ]);
   log();
 
@@ -182,7 +190,7 @@ for (let i = 0; i < trades.length; i++) {
     sellFees += t.fee;
 
     let remaining = t.qty;
-    let disposalProceeds = t.total; // already net of fee
+    let disposalProceeds = Math.abs(t.total); // already net of fee
     let gain = 0;
 
     // ===== 1. SAME-DAY MATCHING =====
@@ -220,30 +228,36 @@ for (let i = 0; i < trades.length; i++) {
         const matchQty = Math.min(remaining, b.remaining);
         debug('matched %s from buy:%s (within 30 days)', matchQty, b.id);
         const costPortion = (b.total / b.qty) * matchQty;
+        log();
         log(
           '%s of this quantity is matched with the buy on %s',
           matchQty.toFixed(8),
           formatDate(b.date)
         );
 
-        debugGain(
-          'disposalProceeds=%s, quantity=%s, matched=%s, costPortion=%s',
-          disposalProceeds,
-          t.qty,
-          matchQty,
-          costPortion,
-        );
-        debugGain('(disposalProceeds / quantity) * matched - costPortion');
-        debugGain(
-          '(%s / %s) * %s - %s)',
-          disposalProceeds,
-          t.qty,
-          matchQty,
-          costPortion,
-        );
-        const thisGain = (disposalProceeds / t.qty) * matchQty - costPortion;
-        debugGain('= %s', thisGain);
+        // disposalProceeds already has fee removed
+        const proportionOfFullDisposal = matchQty / t.qty;
+        const matchedDisposalProceeds = proportionOfFullDisposal * disposalProceeds;
+        logColumns([
+          'Disposal Proceeds',
+          `(apportioned ${matchQty.toFixed(8)} / ${t.qty.toFixed(8)} * ${disposalProceeds.toFixed(2)})`,
+          formatGbp(matchedDisposalProceeds)
+        ]);
+
+        const proportionOfMatchedBuy = matchQty / b.qty;
+        const allowableCost = proportionOfMatchedBuy * b.total
+        logColumns([
+          'Allowable cost',
+          `(apportioned ${matchQty.toFixed(8)} / ${b.qty.toFixed(8)} * ${b.total.toFixed(2)})`,
+          formatGbp(allowableCost)
+        ]);
+        const thisGain = matchedDisposalProceeds - allowableCost;
         gain += thisGain;
+        logColumns([
+          'Total gain',
+          '(Disposal proceeds - Allowable cost)',
+          formatGbp(thisGain)
+        ]);
 
         b.remaining -= matchQty;
         remaining -= matchQty;
@@ -253,6 +267,7 @@ for (let i = 0; i < trades.length; i++) {
 
     // ===== 3. SECTION 104 POOL =====
     if (remaining > 0) {
+      throw new Error('Disposal -> section 104 considerations are not tested');
       const poolCostPerBTC = poolQty > 0 ? poolCost / poolQty : 0;
       const costPortion = poolCostPerBTC * remaining;
 
@@ -311,9 +326,12 @@ for (let i = 0; i < trades.length; i++) {
 
 // ===== OUTPUT =====
 console.log('Disposals:');
+let totalGain = 0;
 results.forEach(r => {
   console.log(`${r.date} | Sold ${r.qty} BTC | Gain/Loss £${r.gain.toFixed(2)}`);
+  totalGain += r.gain;
 });
+console.log('Total gain over timeframe:', formatGbp(totalGain));
 
 console.log('\nSection 104 Pool:');
 console.log(`BTC: ${poolQty}`);
