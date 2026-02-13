@@ -67,8 +67,12 @@ function log (...args) {
 }
 
 const COLSIZE = 20;
-function logColumns (cols) {
-  log(cols.map((c) => c.padStart(COLSIZE, ' ')).join(' '));
+const LC_S104OPTS = { sizes: [0, 10] };
+const LC_30DMATCH = { sizes: [0, 50, 1, 10] };
+function logColumns (cols, {
+  sizes = new Array(cols.length).fill(COLSIZE),
+} = {}) {
+  log(cols.map((c, i) => c.padStart(sizes[i] || COLSIZE, ' ')).join(' '));
 }
 
 // POOL MANAGEMENT
@@ -88,13 +92,13 @@ function addToPool (qty, cost) {
       '',
       'BTC quantity',
       'Pool of actual cost',
-    ]);
+    ], LC_S104OPTS);
     logColumns([
       '',
       '',
       poolQty.toFixed(8),
       formatGbp(poolCost)
-    ]);
+    ], LC_S104OPTS);
     log();
 
     return;
@@ -105,25 +109,25 @@ function addToPool (qty, cost) {
     '',
     'BTC quantity',
     'Pool of actual cost',
-  ]);
+  ], LC_S104OPTS);
   logColumns([
     'Brought forward',
     '',
     poolQty.toFixed(8),
     formatGbp(poolCost)
-  ]);
+  ], LC_S104OPTS);
   logColumns([
     '',
     'plus',
     qty.toFixed(8),
     formatGbp(cost),
-  ]);
+  ], LC_S104OPTS);
   logColumns([
     '',
     '',
     '-'.repeat(COLSIZE),
     '-'.repeat(COLSIZE),
-  ]);
+  ], LC_S104OPTS);
   poolQty = poolQty.plus(qty);
   poolCost = poolCost.plus(cost);
   logColumns([
@@ -131,7 +135,7 @@ function addToPool (qty, cost) {
     '',
     poolQty.toFixed(8),
     formatGbp(poolCost)
-  ]);
+  ], LC_S104OPTS);
   log();
 
 }
@@ -259,26 +263,30 @@ for (let i = 0; i < trades.length; i++) {
         // disposalProceeds already has fee removed
         const proportionOfFullDisposal = matchQty.div(t.qty);
         const matchedDisposalProceeds = proportionOfFullDisposal.times(disposalProceeds);
+        log();
         logColumns([
           'Disposal Proceeds',
           `(apportioned ${matchQty.toFixed(8)} / ${t.qty.toFixed(8)} * ${disposalProceeds.toFixed(2)})`,
+          '=',
           formatGbp(matchedDisposalProceeds)
-        ]);
+        ], LC_30DMATCH);
 
         const proportionOfMatchedBuy = matchQty.div(b.qty);
         const allowableCost = proportionOfMatchedBuy.times(b.total);
         logColumns([
           'Allowable cost',
           `(apportioned ${matchQty.toFixed(8)} / ${b.qty.toFixed(8)} * ${b.total.toFixed(2)})`,
+          '=',
           formatGbp(allowableCost)
-        ]);
+        ], LC_30DMATCH);
         const thisGain = matchedDisposalProceeds.minus(allowableCost);
         gain = gain.plus(thisGain);
         logColumns([
           'Total gain',
           '(Disposal proceeds - Allowable cost)',
+          '=',
           formatGbp(thisGain)
-        ]);
+        ], LC_30DMATCH);
 
         b.remaining = b.remaining.minus(matchQty);
         remaining = remaining.minus(matchQty);
