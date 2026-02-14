@@ -1,13 +1,12 @@
 const fs = require('fs');
 const assert = require('assert');
-const { parse } = require('csv-parse/sync');
 const Big = require('big.js');
 const debug = require('debug');
+const InputFormat = require('./lib/input-format');
 
 // debug streams
 const debugMatching = debug('btc-cgt:matching');
 const debugDays = debug('btc-cgt:days');
-const debugInput = debug('btc-cgt:input');
 
 // add safeguard to avoid causing precision loss
 Big.strict = true;
@@ -19,17 +18,11 @@ const ZERO = new Big('0');
 
 // ===== CONFIG =====
 const FILE = './without-deposits.csv';
-const ASSET = 'BTC';
 
 // Reporting in UK, use Europe/London
 process.env.TZ = 'Europe/London';
 
 // ===== HELPERS =====
-function toBig (v) {
-  if (!v) return 0;
-  return new Big(String(v).replace(/[£,]/g, '').trim());
-}
-
 // Math.min equivalent
 function bigMin (a, b) {
   assert(a instanceof Big, 'bigMin() a not instanceof Big');
@@ -151,50 +144,11 @@ function removeFromPool (qty, cost) {
 // ===== LOAD CSV =====
 const raw = fs.readFileSync(FILE, 'utf8');
 
-// Remove first metadata row if present
-const lines = raw.split('\n').slice(1).join('\n');
-
-const records = parse(lines, {
-  columns: true,
-  skip_empty_lines: true,
-});
+// ===== INIT INPUT =====
+const input = InputFormat.from(raw);
 
 // ===== NORMALISE TRADES =====
-let trades = records
-  .filter(r => r['Asset'] === ASSET)
-  .map((r) => ({
-    ...r,
-    'Transaction Type': r['Transaction Type'].toUpperCase().replace(/^.* /, ''),
-  }))
-  .filter(r => ['BUY', 'SELL'].includes(r['Transaction Type']))
-  .map(r => {
-    debugInput(r);
-    const tsToDate = (given) => {
-      const split = given.split(' ');
-      return `${split[0]}T${split[1]}Z`;
-    };
-    const date = new Date(tsToDate(r['Timestamp']));
-
-    const qty = toBig(r['Quantity Transacted']).abs(); // quantity negative for sales
-    const price = toBig(r['Price']);
-    const fee = toBig(r['Fees and/or Spread']);
-    // Represents GBP spent (BUY) or received (SELL). i.e.
-    // for BUY, total = BTC cost + Fee
-    // for SELL, total = sale proceeds - Fee
-    const total = toBig(r['Total (inclusive of fees and/or spread)']);
-
-    return {
-      id: r.ID,
-      date,
-      type: r['Transaction Type'],
-      qty,
-      fee,
-      total,
-      description: r.Notes,
-      raw: r
-    };
-  })
-  .sort((a, b) => a.date - b.date);
+const trades = input.parseTrades();
 
 // ===== MATCHING STRUCTURES =====
 let poolQty = ZERO;
@@ -203,7 +157,7 @@ let buyFees = ZERO;
 let sellFees = ZERO;
 
 let futureBuys = []; // for 30-day matching
-let results = [];
+let disposals = [];
 
 // Pre-store buys for 30-day matching
 trades.forEach(t => {
@@ -314,7 +268,7 @@ for (let i = 0; i < trades.length; i++) {
       remaining = ZERO;
     }
 
-    results.push({
+    disposals.push({
       date: t.date.toISOString().slice(0, 10),
       qty: t.qty,
       proceeds: disposalProceeds,
@@ -363,7 +317,7 @@ for (let i = 0; i < trades.length; i++) {
 // ===== OUTPUT =====
 console.log('Disposals:');
 let totalGain = ZERO;
-results.forEach(r => {
+disposals.forEach(r => {
   console.log(`${r.date} | Sold ${r.qty} BTC | Gain/Loss £${r.gain.toFixed(2)}`);
   totalGain = totalGain.plus(r.gain);
 });
