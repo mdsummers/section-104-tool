@@ -145,7 +145,7 @@ function addToPool (qty, cost) {
 }
 
 function removeFromPool (qty, cost) {
-
+  throw new Error('Not implemented');
 }
 
 // ===== LOAD CSV =====
