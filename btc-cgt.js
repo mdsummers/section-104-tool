@@ -3,6 +3,10 @@ const assert = require('assert');
 const Big = require('big.js');
 const debug = require('debug');
 const InputFormat = require('./lib/input-format');
+const {
+  isValidTrade,
+  isBig,
+} = require('./lib/validation');
 
 // debug streams
 const debugMatching = debug('btc-cgt:matching');
@@ -25,8 +29,8 @@ process.env.TZ = 'Europe/London';
 // ===== HELPERS =====
 // Math.min equivalent
 function bigMin (a, b) {
-  assert(a instanceof Big, 'bigMin() a not instanceof Big');
-  assert(b instanceof Big, 'bigMin() b not instanceof Big');
+  assert(isBig(a), 'bigMin() a not a Big');
+  assert(isBig(b), 'bigMin() b not a Big');
   return a.lt(b) ? a : b;
 }
 
@@ -49,7 +53,7 @@ function formatDate (date = new Date()) {
 }
 
 function formatGbp (given) {
-  assert(given instanceof Big, 'formatGbp() given not instanceof Big');
+  assert(isBig(given), 'formatGbp() given not a Big');
   const isNegative = given.lt(ZERO);
   return [
     isNegative ? '-' : '',
@@ -75,8 +79,8 @@ function logColumns (cols, {
 // POOL MANAGEMENT
 let poolFormed = false;
 function addToPool (qty, cost) {
-  assert(qty instanceof Big, 'addToPool() qty not instanceof Big');
-  assert(cost instanceof Big, 'addToPool() cost not instanceof Big');
+  assert(isBig(qty), 'addToPool() qty not a Big');
+  assert(isBig(cost), 'addToPool() cost not a Big');
   log();
   if (!poolFormed) {
     poolFormed = true;
@@ -159,8 +163,9 @@ let sellFees = ZERO;
 let futureBuys = []; // for 30-day matching
 let disposals = [];
 
-// Pre-store buys for 30-day matching
 trades.forEach(t => {
+  assert(isValidTrade(t), 'Invalid trade, use DEBUG=* for more info');
+  // Pre-store buy for 30-day matching
   if (t.type === 'BUY') {
     futureBuys.push({ ...t, remaining: t.qty });
   }
