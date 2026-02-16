@@ -22,7 +22,7 @@ const trades = input.parseTrades();
 
 const tradeProcessor = new TradeProcessor({
   asset: 'BTC',
-  currency: 'GBP'
+  currency: 'GBP',
 });
 
 const {
@@ -34,7 +34,7 @@ const {
 
 // ===== OUTPUT =====
 console.log('Disposals:');
-disposals.forEach(d => console.log(d.toString()));
+disposals.forEach((d) => console.log(d.toString()));
 console.log('Total gain over timeframe:', formatGbp(gain));
 
 console.log('\nSection 104 Pool:');
