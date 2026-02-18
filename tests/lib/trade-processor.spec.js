@@ -24,6 +24,10 @@ describe('TradeProcessor', () => {
       const trades = [{
         id: '#1',
         type: 'BUY',
+        // Relevant, from HS284:
+        // "The exception to using the actual cost is if you held
+        // some of the shares on 31 March 1982. In that case you will
+        // need to use the market value of the shares on that day."
         date: new Date('1979-06-01T09:00:00.000Z'),
         description: 'Bought 2000 shares in Wilson and Strickland PLC',
         qty: new Big('2000'),
@@ -132,10 +136,12 @@ describe('TradeProcessor', () => {
         gain,
         qty,
         proceeds,
+        toString,
       }] = disposals;
       expect(gain.eq('1650')).toBe(true); // (1750 - 100)
       expect(proceeds.eq('6000')).toBe(true);
       expect(qty.eq('4000')).toBe(true);
+      expect(toString()).toBe('2020-08-30 | Sold 4000 shares | Gain/Loss £1650.00');
     });
 
     const example3Trades = [{
@@ -301,5 +307,61 @@ describe('TradeProcessor', () => {
       expect(proceeds.toFixed(0)).toBe('250');
       expect(qty.toFixed(0)).toBe('100');
     });
-  });
+
+    it('should also cater for a BUY which is partially matched - example adjusted', () => {
+      const trades = [{
+        id: '#1',
+        type: 'BUY',
+        date: new Date('2020-03-01T09:00:00.000Z'),
+        description: 'Suppose I have a section 104 holding of 1000 shares with base cost £2000',
+        qty: new Big('1000'),
+        fee: ZERO,
+        total: new Big('2000'),
+        raw: {},
+      }, {
+        id: '#2',
+        type: 'SELL',
+        date: new Date('2021-01-11T09:00:00.000Z'),
+        description: 'Now suppose I sell 100 shares on day 1 for £250',
+        qty: new Big('100'),
+        fee: ZERO,
+        total: new Big('250'),
+        raw: {},
+      }, {
+        id: '#3',
+        type: 'BUY',
+        date: new Date('2021-01-12T09:00:00.000Z'),
+        description: 'On day 2 I buy 200 shares for £600',
+        qty: new Big('200'),
+        fee: ZERO,
+        total: new Big('600'),
+        raw: {},
+      }];
+
+      const tp = new TradeProcessor({
+        // asset: 'Example plc',
+        asset: new Share(),
+        currency: GBP,
+      });
+      const {
+        disposals,
+        pool: {
+          qty: poolQty,
+          cost: poolCost,
+        },
+      } = tp.process(trades);
+      expect(poolQty.toFixed(0)).toBe('1100');
+      expect(poolCost.toFixed(0)).toBe('2300');
+
+      expect(disposals.length).toBe(1);
+      const [{
+        gain,
+        qty,
+        proceeds,
+      }] = disposals;
+      expect(gain.toFixed(0)).toBe('-50');
+      expect(proceeds.toFixed(0)).toBe('250');
+      expect(qty.toFixed(0)).toBe('100');
+    });
+  }); // reddit example
 });
