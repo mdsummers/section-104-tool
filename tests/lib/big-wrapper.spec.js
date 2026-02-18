@@ -1,8 +1,11 @@
+const util = require('util');
 const {
   isBig,
   ZERO,
   Big,
   bigMin,
+  disableBigInspect,
+  enableBigInspect,
 } = require('../../lib/big-wrapper');
 
 describe('isBig', () => {
@@ -38,5 +41,22 @@ describe('bigMin', () => {
     const a = new Big('3.00000000000001');
     const b = new Big('3');
     expect(bigMin(a, b)).toBe(b);
+  });
+});
+
+describe('enableBigInspect / disableBigInspect', () => {
+  afterEach(() => disableBigInspect());
+
+  it('should use a custom util.inspect function on enablement', () => {
+    enableBigInspect();
+    enableBigInspect(); // code path
+    expect(util.inspect(new Big('-123.123'))).toMatch('-123.123');
+    expect(util.inspect(new Big('-123.123'))).not.toMatch('Big {');
+  });
+
+  it('should use the default util.inspect on disablement', () => {
+    disableBigInspect();
+    expect(util.inspect(new Big('-123.123'))).not.toMatch('-123.123');
+    expect(util.inspect(new Big('-123.123'))).toMatch('Big {');
   });
 });
