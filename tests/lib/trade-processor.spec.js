@@ -235,4 +235,71 @@ describe('TradeProcessor', () => {
       expect(qty.toFixed(0)).toBe('400');
     });
   }); // examples
+
+  describe('reddit full match example', () => {
+    it('should follow the example', () => {
+      const trades = [{
+        id: '#1',
+        type: 'BUY',
+        date: new Date('2020-03-01T09:00:00.000Z'),
+        description: 'Suppose I have a section 104 holding of 1000 shares with base cost £2000',
+        qty: new Big('1000'),
+        fee: ZERO,
+        total: new Big('2000'),
+        raw: {},
+      }, {
+        id: '#2',
+        type: 'SELL',
+        date: new Date('2021-01-11T09:00:00.000Z'),
+        description: 'Now suppose I sell 100 shares on day 1 for £250',
+        qty: new Big('100'),
+        fee: ZERO,
+        total: new Big('250'),
+        raw: {},
+      }, {
+        id: '#3',
+        type: 'BUY',
+        date: new Date('2021-01-12T09:00:00.000Z'),
+        description: 'On day 2 I buy 100 shares for £300',
+        qty: new Big('100'),
+        fee: ZERO,
+        total: new Big('300'),
+        raw: {},
+      }, {
+        id: '#4',
+        type: 'BUY',
+        date: new Date('2021-01-13T09:00:00.000Z'),
+        description: 'On day 3 I buy 100 shares for £320.',
+        qty: new Big('100'),
+        fee: ZERO,
+        total: new Big('320'),
+        raw: {},
+      }];
+
+      const tp = new TradeProcessor({
+        // asset: 'Example plc',
+        asset: new Share(),
+        currency: GBP,
+      });
+      const {
+        disposals,
+        pool: {
+          qty: poolQty,
+          cost: poolCost,
+        },
+      } = tp.process(trades);
+      expect(poolQty.toFixed(0)).toBe('1100');
+      expect(poolCost.toFixed(0)).toBe('2320');
+
+      expect(disposals.length).toBe(1);
+      const [{
+        gain,
+        qty,
+        proceeds,
+      }] = disposals;
+      expect(gain.toFixed(0)).toBe('-50');
+      expect(proceeds.toFixed(0)).toBe('250');
+      expect(qty.toFixed(0)).toBe('100');
+    });
+  });
 });
