@@ -16,6 +16,7 @@ describe('validation', () => {
       fee: ZERO,
       total: new Big('4'),
       raw: {},
+      type: 'BUY',
     };
 
     it('should validate the control trade', () => {
@@ -54,6 +55,10 @@ describe('validation', () => {
       total: new Big('123.123'),
     }, {
       total: new Big('10'),
+    }, {
+      total: new Big('-10'), // allow negative for sell
+    }, {
+      type: 'SELL',
     }, {
       raw: {
         a: 'whatever',
@@ -106,9 +111,11 @@ describe('validation', () => {
     }, {
       total: 12,
     }, {
-      total: new Big('-1'),
+      total: ZERO,
     }, {
       raw: false,
+    }, {
+      type: 'TRADE',
     }])('should mark %p as invalid', (input) => {
       expect(isValidTrade({
         ...control,
