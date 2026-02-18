@@ -8,9 +8,18 @@ Such a holding is required for the calculation of (taxable) gains when making di
 
 The tool was originally created for tracking coinbase transactions (CSV export of BTC-GBP transactions). I intend to expand it to Vanguard GIA reports.
 
+## Getting started
+
+```
+npm ci
+npm link
+s104 <input-file>
+s104 -h
+```
+
 ## TODO
 
-* Add unit tests, coverage, linting - WIP
+* Add ~~unit tests~~, **full** coverage, ~~linting~~ - WIP
 * Facilitate multiple input formats (e.g. Vanguard GIA report)
 
 ## Limitations

@@ -1,15 +1,34 @@
+#!/usr/bin/env node
 const fs = require('fs');
+const path = require('path');
 const InputFormat = require('./lib/input-format');
 const TradeProcessor = require('./lib/trade-processor');
 
-// ===== CONFIG =====
-const FILE = './without-deposits.csv';
+const [, cmd, file] = process.argv;
+const usage = `Usage: ${cmd} <file>`;
+
+if (file === '-h') {
+  console.log(usage);
+  process.exit(0);
+}
+
+if (!file) {
+  console.error(usage);
+  process.exit(1);
+}
+
+const filePath = path.resolve(file);
+if (!fs.existsSync(filePath)) {
+  console.error('Error: file not found:', filePath);
+  console.error(usage);
+  process.exit(1);
+}
 
 // Reporting in UK, use Europe/London
 process.env.TZ = 'Europe/London';
 
 // ===== LOAD CSV =====
-const raw = fs.readFileSync(FILE, 'utf8');
+const raw = fs.readFileSync(filePath, 'utf8');
 
 // ===== INIT INPUT =====
 const input = InputFormat.from(raw);

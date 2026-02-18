@@ -2,7 +2,9 @@
   "name": "section-104-tool",
   "version": "1.0.0",
   "description": "",
-  "main": "btc-cgt.js",
+  "bin": {
+    "s104": "./cli.js"
+  },
   "scripts": {
     "test": "jest",
     "pretest": "eslint ."
