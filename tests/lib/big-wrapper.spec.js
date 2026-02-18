@@ -4,6 +4,7 @@ const {
   ZERO,
   Big,
   bigMin,
+  bigIsInt,
   disableBigInspect,
   enableBigInspect,
 } = require('../../lib/big-wrapper');
@@ -41,6 +42,26 @@ describe('bigMin', () => {
     const a = new Big('3.00000000000001');
     const b = new Big('3');
     expect(bigMin(a, b)).toBe(b);
+  });
+});
+
+describe('bigIsInt', () => {
+  it.each([
+    '12345',
+    '0',
+    '1',
+    '-123',
+    '-701288281',
+  ])('should return true for %p', (input) => {
+    expect(bigIsInt(new Big(input))).toBe(true);
+  });
+
+  it.each([
+    '12345.123',
+    `${Math.PI}`,
+    '0.00000000000001',
+  ])('should return false for %p', (input) => {
+    expect(bigIsInt(new Big(input))).toBe(false);
   });
 });
 

@@ -2,6 +2,7 @@ const fs = require('fs');
 const InputFormat = require('./lib/input-format');
 const TradeProcessor = require('./lib/trade-processor');
 const { GBP } = require('./lib/currency');
+const { Bitcoin } = require('./lib/asset');
 
 // ===== CONFIG =====
 const FILE = './without-deposits.csv';
@@ -19,7 +20,7 @@ const input = InputFormat.from(raw);
 const trades = input.parseTrades();
 
 const tradeProcessor = new TradeProcessor({
-  asset: 'BTC',
+  asset: new Bitcoin(),
   currency: GBP,
 });
 
