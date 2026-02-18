@@ -10,14 +10,12 @@ The tool was originally created for tracking coinbase transactions (CSV export o
 
 ## TODO
 
-* Structure into modules
-* Add unit tests, coverage, linting
+* Add unit tests, coverage, linting - WIP
 * Facilitate multiple input formats (e.g. Vanguard GIA report)
 
 ## Limitations
 
 * Same-day matching is not implemented/tested.
-* Non-matching disposals are not implemented (the pool is not reduced)
 
 (reaching unimplemented logic immediately throws)
 
