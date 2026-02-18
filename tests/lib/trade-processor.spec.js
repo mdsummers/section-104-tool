@@ -1,7 +1,18 @@
-const { Big, ZERO } = require('../../lib/big-wrapper');
+const {
+  Big,
+  ZERO,
+  enableBigInspect,
+  disableBigInspect,
+} = require('../../lib/big-wrapper');
 const TradeProcessor = require('../../lib/trade-processor');
 
 describe('TradeProcessor', () => {
+  beforeAll(() => enableBigInspect());
+  afterAll(() => disableBigInspect());
+  beforeEach(() => {
+    // eslint-disable-next-line global-require
+    global.console = require('console');
+  });
   // https://www.gov.uk/government/publications/shares-and-capital-gains-tax-hs284-self-assessment-helpsheet/hs284-shares-and-capital-gains-tax-2021#how-to-work-out-the-gain-for-shares-in-a-section-104-holding
   describe('HS284 examples', () => {
     it('should follow example 1', () => {
@@ -65,5 +76,62 @@ describe('TradeProcessor', () => {
       expect(qty.eq(new Big('12000'))).toBe(true);
       expect(cost.eq(new Big('12000'))).toBe(true); // not part of example
     });
-  });
+
+    it('should follow example 2', () => {
+      const trades = [{
+        id: '#1',
+        type: 'BUY',
+        date: new Date('2020-03-01T09:00:00.000Z'),
+        description: 'Bought 9500 shares in Mesopotamia plc',
+        qty: new Big('9500'),
+        fee: ZERO,
+        total: new Big('9500'), // we do not know this figure
+        raw: {},
+      }, {
+        id: '#2',
+        type: 'SELL',
+        date: new Date('2020-08-30T09:00:00.000Z'),
+        description: 'Sold 4000 shares in Mesopotamia plc',
+        qty: new Big('4000'),
+        fee: ZERO,
+        total: new Big('6000'),
+        raw: {},
+      }, {
+        id: '#3',
+        type: 'BUY',
+        date: new Date('2020-09-11T09:00:00.000Z'),
+        description: 'Bought 500 shares in Mesopotamia plc',
+        qty: new Big('500'),
+        fee: ZERO,
+        total: new Big('850'),
+        raw: {},
+      }];
+
+      const tp = new TradeProcessor({
+        asset: 'Mesopotamia plc',
+        currency: 'GBP',
+      });
+      const {
+        disposals,
+        pool: {
+          qty: poolQty,
+          cost: poolCost,
+        },
+      } = tp.process(trades);
+      expect(poolQty.eq('6000')).toBe(true);
+      expect(poolCost.eq('6000')).toBe(true);
+
+      expect(disposals.length).toBe(1);
+      const [{
+        gain,
+        qty,
+        proceeds,
+      }] = disposals;
+      expect(gain.eq('1650')).toBe(true); // (1750 - 100)
+      expect(proceeds.eq('6000')).toBe(true);
+      expect(qty.eq('4000')).toBe(true);
+
+      console.log(tp.process(trades));
+    });
+  }); // examples
 });
