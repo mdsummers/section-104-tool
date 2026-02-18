@@ -1,9 +1,7 @@
 const fs = require('fs');
 const InputFormat = require('./lib/input-format');
 const TradeProcessor = require('./lib/trade-processor');
-const {
-  formatGbp,
-} = require('./lib/formatters');
+const { GBP } = require('./lib/currency');
 
 // ===== CONFIG =====
 const FILE = './without-deposits.csv';
@@ -22,7 +20,7 @@ const trades = input.parseTrades();
 
 const tradeProcessor = new TradeProcessor({
   asset: 'BTC',
-  currency: 'GBP',
+  currency: GBP,
 });
 
 const {
@@ -35,10 +33,10 @@ const {
 // ===== OUTPUT =====
 console.log('Disposals:');
 disposals.forEach((d) => console.log(d.toString()));
-console.log('Total gain over timeframe:', formatGbp(gain));
+console.log('Total gain over timeframe:', GBP.format(gain));
 
 console.log('\nSection 104 Pool:');
 console.log('BTC:', pool.qty.toFixed(8));
-console.log('Cost:', formatGbp(pool.cost));
-console.log('Fees:', formatGbp(fees.total));
-console.log('of which buy/sell: %s/%s', formatGbp(fees.buy), formatGbp(fees.sell));
+console.log('Cost:', GBP.format(pool.cost));
+console.log('Fees:', GBP.format(fees.total));
+console.log('of which buy/sell: %s/%s', GBP.format(fees.buy), GBP.format(fees.sell));

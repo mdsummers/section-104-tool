@@ -4,6 +4,7 @@ const {
   enableBigInspect,
   disableBigInspect,
 } = require('../../lib/big-wrapper');
+const { GBP } = require('../../lib/currency');
 const TradeProcessor = require('../../lib/trade-processor');
 
 describe('TradeProcessor', () => {
@@ -65,7 +66,7 @@ describe('TradeProcessor', () => {
       }];
       const tp = new TradeProcessor({
         asset: 'Wilson and Strickland plc',
-        currency: 'GBP',
+        currency: GBP,
       });
       const {
         pool: {
@@ -109,7 +110,7 @@ describe('TradeProcessor', () => {
 
       const tp = new TradeProcessor({
         asset: 'Mesopotamia plc',
-        currency: 'GBP',
+        currency: GBP,
       });
       const {
         disposals,
@@ -173,7 +174,7 @@ describe('TradeProcessor', () => {
       const trades = example3Trades.slice(0, 3);
       const tp = new TradeProcessor({
         asset: 'Lobster plc',
-        currency: 'GBP',
+        currency: GBP,
       });
 
       const {
@@ -201,7 +202,7 @@ describe('TradeProcessor', () => {
       const trades = example3Trades;
       const tp = new TradeProcessor({
         asset: 'Lobster plc',
-        currency: 'GBP',
+        currency: GBP,
       });
 
       const {
