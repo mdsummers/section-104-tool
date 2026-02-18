@@ -21,6 +21,8 @@ s104 -h
 
 * Add ~~unit tests~~, **full** coverage, ~~linting~~ - WIP
 * Facilitate multiple input formats (e.g. Vanguard GIA report)
+* Reduce ambiguity over "total" being net of fees...
+  * ...or allow trade to take either proceeds XOR total
 
 ## Limitations
 

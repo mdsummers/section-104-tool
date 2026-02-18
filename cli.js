@@ -32,13 +32,12 @@ const raw = fs.readFileSync(filePath, 'utf8');
 
 // ===== INIT INPUT =====
 const input = InputFormat.from(raw);
-const {
+
+const [{
+  trades,
   asset,
   currency,
-} = input;
-
-// ===== NORMALISE TRADES =====
-const trades = input.parseTrades();
+}] = input.extractAssetTrades();
 
 const tradeProcessor = new TradeProcessor({
   asset,
