@@ -17,6 +17,78 @@ s104 <input-file>
 s104 -h
 ```
 
+## Feature: Coinbase CSV Compatibility
+
+This tool supports transaction history exported from Coinbase as a CSV file.
+
+### Exporting your data from Coinbase
+
+1. Navigate to: `https://accounts.coinbase.com/statements`
+  Authenticate if required.
+2. Under **Generate custom statement**, create a report with the following settings:
+  - **Asset:** BTC  
+  - **Transaction Types:** All transactions  
+  - **Date range:** (enough to cover all activity)
+3. Click **Generate Report**, then download the resulting **CSV** once it becomes available.
+4. Save the CSV file somewhere accessible from your terminal.
+
+### Running against the data
+
+```bash
+s104 ./path/to/downloaded.csv
+```
+
+Will output Section 104 pool and reporting information for all GBP transactions.
+
+## Vanguard UK GIA CSV Compatibility
+
+This tool supports **itemised transaction histories** from a Vanguard UK **General Investment Account (GIA)**, provided they are supplied in **CSV** format.
+
+Vanguard exports transactions as **.xlsx** files, so you will need to convert the relevant sheet to CSV before importing.
+
+### Exporting your data from Vanguard UK
+
+1. Log in to your Vanguard UK account.
+
+2. Navigate to your **General Investment Account (GIA)**.
+
+3. Open **Transactions** (or **Activity**) and choose the **Export** option.
+
+4. Download the **Excel (.xlsx)** file containing your **itemised transaction history**.
+
+### Converting the XLSX to CSV
+
+Open the downloaded file in Excel, Numbers, LibreOffice, or similar spreadsheet software.
+
+Locate the sheet containing the **GIA itemised transactions**, then export **that sheet only** to CSV:
+
+- **Excel:**  
+  `File → Save As → CSV (Comma delimited) (.csv)`
+
+- **Numbers:**  
+  `File → Export To → CSV`
+
+- **LibreOffice Calc:**  
+  `File → Save As → Text CSV (.csv)`
+
+Ensure you export **only the transaction sheet**, not summaries or other tabs.
+
+Save the resulting CSV somewhere accessible from your terminal.
+
+### Running the import
+
+```bash
+s104 ./path/to/downloaded.csv
+```
+
+Will output Section 104 pool and reporting information for all discovered assets in the export.
+
+### Important notes
+
+The information being output by the tool is specific to General Investment Accounts (GIAs) *only*.
+
+This tool outputs information on asset disposals, which help in the calculation of CGT liability. The tool **does not** make any attempt to assist with dividends, interest or excess reportable income. For details on those, please see the [Vanguard materials on tax return information](https://www.vanguardinvestor.co.uk/investing-explained/general-account-tax-information).
+
 ## TODO
 
 * Add ~~unit tests~~, **full** coverage, ~~linting~~ - WIP
