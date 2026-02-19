@@ -72,8 +72,7 @@ describe('TradeProcessor', () => {
         raw: {},
       }];
       const tp = new TradeProcessor({
-        // asset: 'Wilson and Strickland plc',
-        asset: new Share(),
+        asset: new Share('Wilson and Strickland plc'),
         currency: GBP,
       });
       const {
@@ -117,8 +116,7 @@ describe('TradeProcessor', () => {
       }];
 
       const tp = new TradeProcessor({
-        // asset: 'Mesopotamia plc',
-        asset: new Share(),
+        asset: new Share('Mesopotamia plc'),
         currency: GBP,
       });
       const {
@@ -184,8 +182,7 @@ describe('TradeProcessor', () => {
     it('should follow example 3', () => {
       const trades = example3Trades.slice(0, 3);
       const tp = new TradeProcessor({
-        // asset: 'Lobster plc',
-        asset: new Share(),
+        asset: new Share('Lobster plc'),
         currency: GBP,
       });
 
@@ -213,8 +210,7 @@ describe('TradeProcessor', () => {
     it('should follow example 3 - continued', () => {
       const trades = example3Trades;
       const tp = new TradeProcessor({
-        // asset: 'Lobster plc',
-        asset: new Share(),
+        asset: new Share('Lobster plc'),
         currency: GBP,
       });
 
@@ -283,8 +279,7 @@ describe('TradeProcessor', () => {
       }];
 
       const tp = new TradeProcessor({
-        // asset: 'Example plc',
-        asset: new Share(),
+        asset: new Share('Example plc'),
         currency: GBP,
       });
       const {
@@ -339,8 +334,7 @@ describe('TradeProcessor', () => {
       }];
 
       const tp = new TradeProcessor({
-        // asset: 'Example plc',
-        asset: new Share(),
+        asset: new Share('Example plc'),
         currency: GBP,
       });
       const {

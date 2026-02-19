@@ -34,6 +34,12 @@ describe('Asset', () => {
       expect(() => a.header()).toThrow(/implemented/);
     });
   });
+
+  describe('toString()', () => {
+    it('should throw if called directly', () => {
+      expect(() => a.toString()).toThrow(/implemented/);
+    });
+  });
 });
 
 describe('Bitcoin', () => {
@@ -64,10 +70,16 @@ describe('Bitcoin', () => {
       expect(b.header()).toBe('BTC quantity');
     });
   });
+
+  describe('toString()', () => {
+    it('should output a description of this asset', () => {
+      expect(b.toString()).toBe('Bitcoin');
+    });
+  });
 });
 
 describe('Share', () => {
-  const s = new Share();
+  const s = new Share('Example plc');
   describe('formatAmountWithUnit', () => {
     it('should throw if not passed a Big', () => {
       expect(() => s.formatAmountWithUnit()).toThrow(/given not a Big/);
@@ -103,10 +115,16 @@ describe('Share', () => {
       expect(s.header()).toBe('Number of shares');
     });
   });
+
+  describe('toString()', () => {
+    it('should output a description of this asset', () => {
+      expect(s.toString()).toBe('Shares of Example plc');
+    });
+  });
 });
 
 describe('Unit', () => {
-  const u = new Unit();
+  const u = new Unit('Some ETF');
   describe('formatAmountWithUnit', () => {
     it('should throw if not passed a Big', () => {
       expect(() => u.formatAmountWithUnit()).toThrow(/given not a Big/);
@@ -141,6 +159,12 @@ describe('Unit', () => {
   describe('header', () => {
     it('should output a header string', () => {
       expect(u.header()).toBe('Number of units');
+    });
+  });
+
+  describe('toString()', () => {
+    it('should output a description of this asset', () => {
+      expect(u.toString()).toBe('Units of Some ETF');
     });
   });
 });
