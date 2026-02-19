@@ -1,7 +1,7 @@
 {
   "name": "section-104-tool",
   "version": "1.0.0",
-  "description": "",
+  "description": "Assist in the tracking of a Section 104 holding",
   "bin": {
     "s104": "./cli.js"
   },
@@ -10,8 +10,8 @@
     "pretest": "eslint ."
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Matt Summers",
+  "license": "MIT",
   "dependencies": {
     "big.js": "^7.0.1",
     "csv-parse": "^6.1.0",
