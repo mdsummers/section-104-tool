@@ -48,13 +48,17 @@ Vanguard exports transactions as **.xlsx** files, so you will need to convert th
 
 ### Exporting your data from Vanguard UK
 
+**These instructions assume the account old design**
+
 1. Log in to your Vanguard UK account.
 
-2. Navigate to your **General Investment Account (GIA)**.
+2. Click **Documents** in the left-hand menu.
 
-3. Open **Transactions** (or **Activity**) and choose the **Export** option.
+3. Open **Report Generator** and choose the **Client Transactions Listing - Excel** option.
 
-4. Download the **Excel (.xlsx)** file containing your **itemised transaction history**.
+4. Select a date range which covers all historic transactions and click **Generate Report**
+
+5. Download the Created report when it becomes available in the document list (you may need to refresh the page).
 
 ### Converting the XLSX to CSV
 
@@ -87,7 +91,7 @@ Will output Section 104 pool and reporting information for all discovered assets
 
 The information being output by the tool is specific to General Investment Accounts (GIAs) *only*.
 
-This tool outputs information on asset disposals, which help in the calculation of CGT liability. The tool **does not** make any attempt to assist with dividends, interest or excess reportable income. For details on those, please see the [Vanguard materials on tax return information](https://www.vanguardinvestor.co.uk/investing-explained/general-account-tax-information).
+This tool outputs information on asset disposals, which help in the calculation of CGT liability. The tool **does not** make any attempt to assist with dividends, interest or excess reportable income. For details on those, please see the Vanguard materials on tax return information - `https://www.vanguardinvestor.co.uk/investing-explained/general-account-tax-information`
 
 ## TODO
 
