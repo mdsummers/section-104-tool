@@ -85,35 +85,37 @@ describe('TradeProcessor', () => {
       expect(cost.eq(new Big('12000'))).toBe(true); // not part of example
     });
 
+    const example2Trades = [{
+      id: '#1',
+      type: 'BUY',
+      date: new Date('2020-03-01T09:00:00.000Z'),
+      description: 'Bought 9500 shares in Mesopotamia plc',
+      qty: new Big('9500'),
+      fee: ZERO,
+      total: new Big('9500'), // we do not know this figure
+      raw: {},
+    }, {
+      id: '#2',
+      type: 'SELL',
+      date: new Date('2020-08-30T09:00:00.000Z'),
+      description: 'Sold 4000 shares in Mesopotamia plc',
+      qty: new Big('4000'),
+      fee: ZERO,
+      total: new Big('6000'),
+      raw: {},
+    }, {
+      id: '#3',
+      type: 'BUY',
+      date: new Date('2020-09-11T09:00:00.000Z'),
+      description: 'Bought 500 shares in Mesopotamia plc',
+      qty: new Big('500'),
+      fee: ZERO,
+      total: new Big('850'),
+      raw: {},
+    }];
+
     it('should follow example 2', () => {
-      const trades = [{
-        id: '#1',
-        type: 'BUY',
-        date: new Date('2020-03-01T09:00:00.000Z'),
-        description: 'Bought 9500 shares in Mesopotamia plc',
-        qty: new Big('9500'),
-        fee: ZERO,
-        total: new Big('9500'), // we do not know this figure
-        raw: {},
-      }, {
-        id: '#2',
-        type: 'SELL',
-        date: new Date('2020-08-30T09:00:00.000Z'),
-        description: 'Sold 4000 shares in Mesopotamia plc',
-        qty: new Big('4000'),
-        fee: ZERO,
-        total: new Big('6000'),
-        raw: {},
-      }, {
-        id: '#3',
-        type: 'BUY',
-        date: new Date('2020-09-11T09:00:00.000Z'),
-        description: 'Bought 500 shares in Mesopotamia plc',
-        qty: new Big('500'),
-        fee: ZERO,
-        total: new Big('850'),
-        raw: {},
-      }];
+      const trades = example2Trades;
 
       const tp = new TradeProcessor({
         asset: new Share('Mesopotamia plc'),
@@ -140,6 +142,20 @@ describe('TradeProcessor', () => {
       expect(proceeds.eq('6000')).toBe(true);
       expect(qty.eq('4000')).toBe(true);
       expect(toString()).toBe('2020-08-30 | Sold 4000 shares | Gain/Loss £1650.00');
+    });
+
+    it('should support dateOnly being provided on trades - example 2', () => {
+      const tradesDateOnly = example2Trades.map((t) => ({
+        ...t,
+        dateOnly: true,
+      }));
+
+      const tp = new TradeProcessor({
+        asset: new Share('Mesopotamia plc'),
+        currency: GBP,
+      });
+
+      tp.process(tradesDateOnly);
     });
 
     const example3Trades = [{
@@ -235,6 +251,20 @@ describe('TradeProcessor', () => {
       expect(gain.toFixed(0)).toBe('300');
       expect(proceeds.toFixed(0)).toBe('1975');
       expect(qty.toFixed(0)).toBe('400');
+    });
+
+    it('should support dateOnly being provided on trades - example 3', () => {
+      const tradesDateOnly = example3Trades.map((t) => ({
+        ...t,
+        dateOnly: true,
+      }));
+
+      const tp = new TradeProcessor({
+        asset: new Share('Lobster plc'),
+        currency: GBP,
+      });
+
+      tp.process(tradesDateOnly);
     });
   }); // examples
 

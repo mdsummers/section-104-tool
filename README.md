@@ -95,11 +95,10 @@ This tool outputs information on asset disposals, which help in the calculation 
 
 ## TODO
 
-* Add ~~unit tests~~, **full** coverage, ~~linting~~ - WIP
-* ~~Facilitate multiple input formats (e.g. Vanguard GIA report)~~
+* Full coverage
 * Reduce ambiguity over "total" being net of fees...
   * ...or allow trade to take either proceeds XOR total
-* Allow date formatting only, i.e. YYYY-MM-DD when the input format omits it, e.g. VanguardGIA
+* Additional input formats as required
 
 ## Limitations
 
