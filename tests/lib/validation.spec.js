@@ -60,6 +60,10 @@ describe('validation', () => {
     }, {
       type: 'SELL',
     }, {
+      dateOnly: true,
+    }, {
+      dateOnly: false,
+    }, {
       raw: {
         a: 'whatever',
         b: 'we',
@@ -96,6 +100,10 @@ describe('validation', () => {
       date: 'today',
     }, {
       date: new Date('foobar'),
+    }, {
+      dateOnly: 1,
+    }, {
+      dateOnly: null,
     }, {
       qty: ZERO,
     }, {
