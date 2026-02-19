@@ -3,7 +3,7 @@ const config = {
   collectCoverage: true,
   collectCoverageFrom: [
     '**/*.js',
-    '!btc-cgt.js',
+    '!cli.js',
     '!jest.config.js',
     '!tests/**/*.js',
     '!coverage/**/*.js',
