@@ -6,8 +6,6 @@ The aim of this tool is to assist in the tracking of a [Section 104 holding](htt
 
 Such a holding is required for the calculation of (taxable) gains when making disposals from the pool. It is not applicable for tax-sheltered accounts (i.e. ISA / SIPP)
 
-The tool was originally created for tracking coinbase transactions (CSV export of BTC-GBP transactions). I intend to expand it to Vanguard GIA reports.
-
 ## Getting started
 
 ```
