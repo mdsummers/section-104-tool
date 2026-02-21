@@ -127,16 +127,18 @@ describe('TradeProcessor', () => {
           qty: poolQty,
           cost: poolCost,
         },
-        gains: {
-          total: totalGain,
-          byTaxYear: gainsByTaxYear,
-        },
+        gain: totalGain,
+        taxYears,
       } = tp.process(trades);
       expect(poolQty.eq('6000')).toBe(true);
       expect(poolCost.eq('6000')).toBe(true);
       expect(totalGain.toFixed()).toBe('1650');
-      expect(Object.keys(gainsByTaxYear)).toEqual(['2020/21']);
-      expect(gainsByTaxYear['2020/21'].toFixed()).toBe('1650');
+
+      expect(Object.keys(taxYears)).toEqual(['2020/21']);
+      expect(taxYears['2020/21'].numberOfDisposals).toBe(1);
+      expect(taxYears['2020/21'].gainsInYear.toFixed()).toBe('1650');
+      expect(taxYears['2020/21'].disposalProceeds.toFixed()).toBe('6000');
+      expect(taxYears['2020/21'].allowableCosts.toFixed()).toBe('4350');
 
       expect(disposals.length).toBe(1);
       const [{
