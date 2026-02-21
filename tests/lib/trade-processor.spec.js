@@ -226,9 +226,11 @@ describe('TradeProcessor', () => {
         gain,
         qty,
         proceeds,
+        allowableCost,
       }] = disposals;
       expect(gain.toFixed(0)).toBe('329');
-      expect(proceeds.toFixed(0)).toBe('3260');
+      expect(proceeds.toFixed(0)).toBe('3360');
+      expect(allowableCost.toFixed(0)).toBe('3031');
       expect(qty.toFixed(0)).toBe('700');
     });
 
@@ -256,9 +258,11 @@ describe('TradeProcessor', () => {
         gain,
         qty,
         proceeds,
+        allowableCost,
       }] = disposals;
       expect(gain.toFixed(0)).toBe('300');
-      expect(proceeds.toFixed(0)).toBe('1975');
+      expect(proceeds.toFixed(0)).toBe('2080');
+      expect(allowableCost.toFixed(0)).toBe('1780');
       expect(qty.toFixed(0)).toBe('400');
     });
 
