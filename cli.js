@@ -50,7 +50,7 @@ assetTrades.forEach(({
 
   const {
     disposals,
-    gain,
+    gains,
     pool,
     fees,
   } = tradeProcessor.process(trades);
@@ -58,7 +58,10 @@ assetTrades.forEach(({
   // ===== OUTPUT =====
   console.log('Disposals:');
   disposals.forEach((d) => console.log(d.toString()));
-  console.log('Total gain over timeframe:', currency.format(gain));
+  Object.entries(gains.byTaxYear).forEach(([fy, fyGain]) => {
+    console.log('Gains in %s: %s', fy, currency.format(fyGain));
+  });
+  console.log('Total gain over timeframe:', currency.format(gains.total));
 
   console.log('\nSection 104 Pool:');
   console.log(

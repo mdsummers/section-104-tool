@@ -127,9 +127,16 @@ describe('TradeProcessor', () => {
           qty: poolQty,
           cost: poolCost,
         },
+        gains: {
+          total: totalGain,
+          byTaxYear: gainsByTaxYear,
+        },
       } = tp.process(trades);
       expect(poolQty.eq('6000')).toBe(true);
       expect(poolCost.eq('6000')).toBe(true);
+      expect(totalGain.toFixed()).toBe('1650');
+      expect(Object.keys(gainsByTaxYear)).toEqual(['2020/21']);
+      expect(gainsByTaxYear['2020/21'].toFixed()).toBe('1650');
 
       expect(disposals.length).toBe(1);
       const [{
@@ -141,7 +148,7 @@ describe('TradeProcessor', () => {
       expect(gain.eq('1650')).toBe(true); // (1750 - 100)
       expect(proceeds.eq('6000')).toBe(true);
       expect(qty.eq('4000')).toBe(true);
-      expect(toString()).toBe('2020-08-30 | Sold 4000 shares | Gain/Loss £1650.00');
+      expect(toString()).toBe('2020-08-30 | 2020/21 | Sold 4000 shares | Gain/Loss £1650.00');
     });
 
     it('should support dateOnly being provided on trades - example 2', () => {
