@@ -279,6 +279,80 @@ describe('TradeProcessor', () => {
 
       tp.process(tradesDateOnly);
     });
+
+    const example3TradesNotNetFee = [{
+      id: '#1',
+      type: 'BUY',
+      date: new Date('2015-04-01T09:00:00.000Z'),
+      description: 'Bought 1000 shares in Lobster plc for 400p per share plus £150 fees',
+      qty: new Big('1000'),
+      total: new Big('4000'),
+      fee: new Big('150'),
+      totalNetFee: false,
+      raw: {},
+    }, {
+      id: '#2',
+      type: 'BUY',
+      date: new Date('2018-09-01T09:00:00.000Z'),
+      description: 'Bought 500 shares in Lobster plc for 410p per share plus £80 fees',
+      qty: new Big('500'),
+      total: new Big('2050'),
+      fee: new Big('80'),
+      totalNetFee: false,
+      raw: {},
+    }, {
+      id: '#3',
+      type: 'SELL',
+      date: new Date('2023-05-01T09:00:00.000Z'),
+      description: 'Sold 700 shares in Lobster plc for 480p per share (£3360) incurring £100 fees',
+      qty: new Big('700'),
+      total: new Big('-3360'), // will be forced abs
+      fee: new Big('100'),
+      totalNetFee: false,
+      raw: {},
+    }, {
+      id: '#4',
+      type: 'SELL',
+      date: new Date('2024-02-01T09:00:00.000Z'),
+      description: 'Sold 400 shares in Lobster plc for 520p per share (£2080) incurring £105 fees',
+      qty: new Big('400'),
+      total: new Big('-2080'), // will be forced abs
+      fee: new Big('105'),
+      totalNetFee: false,
+      raw: {},
+    }];
+
+    it('should yield the same result with totalNetFee: false', () => {
+      const trades = example3TradesNotNetFee;
+      const tp = new TradeProcessor({
+        asset: new Share('Lobster plc'),
+        currency: GBP,
+      });
+
+      const {
+        disposals,
+        pool: {
+          qty: poolQty,
+          cost: poolCost,
+        },
+      } = tp.process(trades);
+      expect(poolQty.eq('400')).toBe(true);
+      // the example rounds costs up and gains down
+      // we must round this down
+      expect(poolCost.toFixed(0, 0)).toBe('1674');
+
+      expect(disposals.length).toBe(2);
+      const [, {
+        gain,
+        qty,
+        proceeds,
+        allowableCost,
+      }] = disposals;
+      expect(gain.toFixed(0)).toBe('300');
+      expect(proceeds.toFixed(0)).toBe('2080');
+      expect(allowableCost.toFixed(0)).toBe('1780');
+      expect(qty.toFixed(0)).toBe('400');
+    });
   }); // examples
 
   describe('reddit full match example', () => {
