@@ -115,6 +115,7 @@ Share,Example plc,,,,
 Currency,GBP,,,,
 Date,Type,Quantity,Total,Fee,Description
 2021-01-10,BUY,10000,25000,0,<optional>
+2022-02-11,SELL,5000,15000,0,<optional>
 ```
 
 ### Metadata rows
