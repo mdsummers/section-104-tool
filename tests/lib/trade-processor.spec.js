@@ -1,4 +1,7 @@
 const {
+  readFileSync,
+} = require('fs');
+const {
   Big,
   ZERO,
   enableBigInspect,
@@ -9,6 +12,7 @@ const {
 } = require('../../lib/asset');
 const { GBP } = require('../../lib/currency');
 const TradeProcessor = require('../../lib/trade-processor');
+const InputFormat = require('../../lib/input-format');
 
 describe('TradeProcessor', () => {
   beforeAll(() => enableBigInspect());
@@ -475,4 +479,34 @@ describe('TradeProcessor', () => {
       expect(qty.toFixed(0)).toBe('100');
     });
   }); // reddit example
+
+  const loadExample = (filename) => readFileSync(
+    `${__dirname}/../fixtures/generic/${filename}`,
+    'utf8'
+  );
+
+  describe('same-day matching', () => {
+    it('should follow CRYPTO22254 example 4', () => {
+      const input = InputFormat.from(loadExample('c01-crypto22254-example4-reordered.csv'));
+      const [{
+        trades,
+        asset,
+        currency,
+      }] = input.extractAssetTrades();
+      const tp = new TradeProcessor({
+        asset,
+        currency,
+      });
+      const {
+        // disposals,
+        pool: {
+          qty: poolQty,
+          cost: poolCost,
+        },
+      } = tp.process(trades);
+      expect(poolQty.toFixed(0)).toBe('7500');
+      expect(poolCost.toFixed(0)).toBe('938');
+      // expect(disposals.length).toBe(1); // same-day grouping
+    });
+  });
 });

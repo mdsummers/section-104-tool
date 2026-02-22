@@ -1,0 +1,11 @@
+Format,Generic,,,,
+Currency,GBP,,,,
+Share,Token D,,,,
+Date,Type,Quantity,Total,Fee,Description
+2024-01-01,BUY,8000,1000,,
+2025-01-31,SELL,5000,500,,
+2025-01-31,BUY,4000,320,,
+2025-01-31,BUY,1000,75,,
+2025-01-31,BUY,1000,70,,
+2025-01-31,SELL,2000,142,,
+2025-01-31,BUY,500,35,,
