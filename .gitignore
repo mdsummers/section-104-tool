@@ -2,3 +2,5 @@
 node_modules
 report.txt
 coverage
+.DS_Store
+!tests/fixtures/**/*.csv

@@ -22,7 +22,9 @@ describe('Currency', () => {
 
     it('should format Bigs in an expected way', () => {
       expect(GBP.format(new Big('-6500.123')))
-        .toBe('-£6500.12');
+        .toBe('-£6,500.12');
+      expect(GBP.format(new Big('12345678.123')))
+        .toBe('£12,345,678.12');
       expect(GBP.format(new Big('123.497')))
         .toBe('£123.50');
       expect(GBP.format(ZERO))

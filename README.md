@@ -6,8 +6,6 @@ The aim of this tool is to assist in the tracking of a [Section 104 holding](htt
 
 Such a holding is required for the calculation of (taxable) gains when making disposals from the pool. It is not applicable for tax-sheltered accounts (i.e. ISA / SIPP)
 
-The tool was originally created for tracking coinbase transactions (CSV export of BTC-GBP transactions). I intend to expand it to Vanguard GIA reports.
-
 ## Getting started
 
 ```
@@ -93,12 +91,124 @@ The information being output by the tool is specific to General Investment Accou
 
 This tool outputs information on asset disposals, which help in the calculation of CGT liability. The tool **does not** make any attempt to assist with dividends, interest or excess reportable income. For details on those, please see the Vanguard materials on tax return information - `https://www.vanguardinvestor.co.uk/investing-explained/general-account-tax-information`
 
+## Feature: Generic CSV format
+
+The tool supports pool creation from a simple CSV format.
+
+Currently only supports shares.
+
+Spreadsheet software can be used to export CSV files matching this format, or a text editor.
+
+### File Structure
+
+The file is a comma-separated values (CSV) file with:
+
+1. Metadata rows
+2. Transaction record header row
+3. Transaction rows in chronological order (oldest → newest)
+
+Example layout:
+
+```
+Format,Generic,,,,
+Share,Example plc,,,,
+Currency,GBP,,,,
+Date,Type,Quantity,Total,Fee,Description
+2021-01-10,BUY,10000,25000,0,<optional>
+2022-02-11,SELL,5000,15000,0,<optional>
+```
+
+### Metadata rows
+
+#### Format indicator
+
+* Mandatory
+* Must start with case-insensitive string `Format,Generic`
+
+#### Share name
+
+* Mandatory
+* Free text
+* Not used in calculations
+* Must contain the literal `Share` in column 1
+
+e.g.
+```
+Share,Example plc,,,,
+```
+
+#### Currency
+
+* Optional
+* Not currently read, GBP used regardless
+
+e.g.
+```
+Currency,GBP,,,,
+```
+
+### Transaction record header row
+
+* Must begin `Date,`
+* Other fields are not required in fixed order
+* Non-documented fields are ignored
+
+e.g.
+```
+Date,Type,Quantity,Total,Fee,Per share (pence),Description,Ignored
+```
+
+### Column details
+
+Required unless otherwise stated
+
+#### `Date`
+
+* Format: `YYYY-MM-DD`
+* Must be in ascending chronological order
+* Multiple transactions, e.g. multiple BUYs are supported on the same date, but same-day matching is not yet supported
+
+#### `Type`
+
+* Allowed values: `BUY` or `SELL`
+* No other values are accepted.
+
+#### `Quantity`
+
+* Positive integer
+* No decimals (fractional shares not supported)
+
+#### `Total`
+
+For `BUY` trades:
+* Represents gross acquisition cost
+* Used to derive per-share cost if needed
+* Does not include fees
+
+For `SELL` trades:
+* Represents disposal proceeds only
+* Must not include fees
+* Used for gain calculations and to ensure correct reporting information is produced
+
+#### `Fee`
+
+* May be:
+  * A numeric value (e.g. 12.50)
+  * `0`
+  * Empty (blank field)
+* Fees are not included in the `Total` column
+
+### Important notes
+
+* The share pool quantity may never go negative
+* Only the final SELL may deplete the pool (dissolving it)
+* Records must cover all historic transactions to avoid incorrect findings being produced.
+* Records must be in chronological order (date ascending)
+
 ## TODO
 
-* Full coverage
-* Reduce ambiguity over "total" being net of fees...
-  * ...or allow trade to take either proceeds XOR total
-* Additional input formats as required
+* Full coverage for `InputFormat`s
+* Wider Generic support for units and crypto
 
 ## Limitations
 

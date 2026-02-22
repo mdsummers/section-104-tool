@@ -4,6 +4,8 @@ const path = require('path');
 const InputFormat = require('./lib/input-format');
 const TradeProcessor = require('./lib/trade-processor');
 
+const { logColumns } = require('./lib/util');
+
 const [, cmd, file] = process.argv;
 const usage = `Usage: ${cmd} <file>`;
 
@@ -53,11 +55,38 @@ assetTrades.forEach(({
     gain,
     pool,
     fees,
+    taxYears,
   } = tradeProcessor.process(trades);
 
   // ===== OUTPUT =====
   console.log('Disposals:');
   disposals.forEach((d) => console.log(d.toString()));
+
+  const colSizes = [10, 16];
+  if (disposals.length) {
+    console.log('');
+    logColumns([
+      'Tax Year',
+      'No. of disposals',
+      'Disposal proceeds',
+      'Allowable costs',
+      'Gains in year',
+    ], { sizes: colSizes });
+  }
+  Object.entries(taxYears).forEach(([fy, {
+    numberOfDisposals,
+    allowableCosts,
+    disposalProceeds,
+    gainsInYear,
+  }]) => {
+    logColumns([
+      fy,
+      `${numberOfDisposals}       `,
+      currency.format(disposalProceeds),
+      currency.format(allowableCosts),
+      currency.format(gainsInYear),
+    ], { sizes: colSizes });
+  });
   console.log('Total gain over timeframe:', currency.format(gain));
 
   console.log('\nSection 104 Pool:');

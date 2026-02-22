@@ -64,6 +64,10 @@ describe('validation', () => {
     }, {
       dateOnly: false,
     }, {
+      totalNetFee: true,
+    }, {
+      totalNetFee: false,
+    }, {
       raw: {
         a: 'whatever',
         b: 'we',
@@ -116,6 +120,10 @@ describe('validation', () => {
       fee: 1,
     }, {
       fee: new Big('-1'),
+    }, {
+      totalNetFee: 1,
+    }, {
+      totalNetFee: null,
     }, {
       total: 12,
     }, {

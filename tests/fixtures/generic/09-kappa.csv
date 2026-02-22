@@ -1,0 +1,10 @@
+Format,Generic,,,,
+Share,Kappa energy,,,,
+Currency,GBP,,,,
+Date,Type,Quantity,Total,Fee,Per share (pence)
+2019-01-15,BUY,7000,15400,,220.00
+2019-06-20,BUY,3000,7200,,240.00
+2020-03-10,SELL,2000,5600,,280.00
+2020-12-05,BUY,2500,6250,,250.00
+2021-07-19,SELL,3000,9600,,320.00
+2022-10-11,SELL,7500,30000,,400.00

@@ -1,4 +1,4 @@
-const { daysBetween } = require('../../lib/util');
+const { daysBetween, getUkTaxYear } = require('../../lib/util');
 
 describe('util', () => {
   describe('daysBetween', () => {
@@ -19,6 +19,28 @@ describe('util', () => {
     it('should return 0 when same day provided', () => {
       const d = new Date();
       expect(daysBetween(d, d)).toBe(0);
+    });
+  });
+
+  describe('getUkTaxYear', () => {
+    it('should throw if a non-date is passed', () => {
+      expect(() => getUkTaxYear(false)).toThrow();
+    });
+
+    it('should throw if an invalid date is passed', () => {
+      expect(() => getUkTaxYear(new Date('Invalid Date'))).toThrow();
+    });
+
+    it('should return the corresponding UK tax year', () => {
+      expect(getUkTaxYear(new Date('2026-01-01T00:00:00Z'))).toBe('2025/26');
+    });
+
+    it('should return the corresponding UK tax year - past April 6th', () => {
+      expect(getUkTaxYear(new Date('2026-04-06T00:00:00Z'))).toBe('2026/27');
+    });
+
+    it('should return the corresponding UK tax year - April 5th', () => {
+      expect(getUkTaxYear(new Date('1999-04-05T00:00:00Z'))).toBe('1998/99');
     });
   });
 });
