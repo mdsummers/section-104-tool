@@ -1,0 +1,5 @@
+Format,Generic,,,,
+Share,Invalid date plc,,,,
+Currency,GBP,,,,
+Date,Type,Quantity,Total,Fee,Per share (pence)
+2021/01/10,BUY,10000,25000,0,250.00
