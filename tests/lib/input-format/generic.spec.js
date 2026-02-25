@@ -20,6 +20,8 @@ describe('Generic', () => {
     [13, '06-zeta.csv'],
     [6, '08-iota.csv'], // has BUY fees
     [6, '09-kappa.csv'], // has empty fees
+    [7, '07-theta.csv'], // same-day matching. acq. count > disp. count
+    [7, '07-theta-matched-counts.csv'], // as above w/ acq. count = disp. count
   ])('should yield %d processable trades from %s', (tradeCount, filename) => {
     const contents = readFileSync(
       `${__dirname}/../../fixtures/generic/${filename}`,
@@ -39,7 +41,6 @@ describe('Generic', () => {
     tp.process(trades);
   });
   it.each([
-    // ['07-theta.csv', /Same day logic/], // TODO: Move when same-day working
     ['01-alpha-negative-pool.csv', /Cannot remove more than exists/],
   ])('should fail to process trades from %s with %p', (filename, pattern) => {
     const contents = readFileSync(
