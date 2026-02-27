@@ -9,6 +9,10 @@ const config = {
     '!coverage/**/*.js',
   ],
   coverageDirectory: 'coverage',
+  coverageReporters: [
+    'lcov',
+    'text-summary',
+  ],
   verbose: true,
   testMatch: [
     '**/tests/**/*.js',

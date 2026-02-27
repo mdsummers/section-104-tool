@@ -1,4 +1,7 @@
 const {
+  readFileSync,
+} = require('fs');
+const {
   Big,
   ZERO,
   enableBigInspect,
@@ -9,6 +12,7 @@ const {
 } = require('../../lib/asset');
 const { GBP } = require('../../lib/currency');
 const TradeProcessor = require('../../lib/trade-processor');
+const InputFormat = require('../../lib/input-format');
 
 describe('TradeProcessor', () => {
   beforeAll(() => enableBigInspect());
@@ -475,4 +479,49 @@ describe('TradeProcessor', () => {
       expect(qty.toFixed(0)).toBe('100');
     });
   }); // reddit example
+
+  const loadExample = (filename) => readFileSync(
+    `${__dirname}/../fixtures/generic/${filename}`,
+    'utf8'
+  );
+
+  describe('same-day matching', () => {
+    // same day Disposal count > acquisition count
+    // for other way around see 07-theta.csv
+    it.each([
+      ['reordered', 'c01-crypto22254-example4-reordered.csv'],
+      ['chronological', 'c01-crypto22254-example4.csv'],
+    ])('should follow CRYPTO22254 example 4 - %p', (_, filename) => {
+      const input = InputFormat.from(loadExample(filename));
+      const [{
+        trades,
+        asset,
+        currency,
+      }] = input.extractAssetTrades();
+      const tp = new TradeProcessor({
+        asset,
+        currency,
+      });
+      const {
+        disposals,
+        pool: {
+          qty: poolQty,
+          cost: poolCost,
+        },
+      } = tp.process(trades);
+      expect(poolQty.toFixed(0)).toBe('7500');
+      expect(poolCost.toFixed(0)).toBe('938');
+      expect(disposals.length).toBe(1);
+      const [{
+        qty,
+        proceeds,
+        allowableCost,
+        gain,
+      }] = disposals;
+      expect(qty.toFixed(0)).toBe('7000');
+      expect(proceeds.toFixed(0)).toBe('642');
+      expect(allowableCost.toFixed(1)).toBe('562.5');
+      expect(gain.toFixed(1)).toBe('79.5');
+    });
+  });
 });

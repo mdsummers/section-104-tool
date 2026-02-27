@@ -1,4 +1,4 @@
-const { daysBetween, getUkTaxYear } = require('../../lib/util');
+const { daysBetween, getUkTaxYear, getShortDate } = require('../../lib/util');
 
 describe('util', () => {
   describe('daysBetween', () => {
@@ -41,6 +41,16 @@ describe('util', () => {
 
     it('should return the corresponding UK tax year - April 5th', () => {
       expect(getUkTaxYear(new Date('1999-04-05T00:00:00Z'))).toBe('1998/99');
+    });
+  });
+
+  describe('getShortDate', () => {
+    it('should return the first part of the ISO8601 string', () => {
+      expect(getShortDate(new Date('2021-01-01T12:12:23.000Z'))).toBe('2021-01-01');
+    });
+
+    it('should take other constructed Date objs', () => {
+      expect(getShortDate(new Date(0))).toBe('1970-01-01');
     });
   });
 });
