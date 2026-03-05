@@ -4,6 +4,10 @@ const path = require('path');
 const InputFormat = require('./lib/input-format');
 const TradeProcessor = require('./lib/trade-processor');
 
+const {
+  ZERO,
+} = require('./lib/big-wrapper');
+
 const { logColumns } = require('./lib/util');
 
 const [, cmd, file] = process.argv;
@@ -90,15 +94,17 @@ assetTrades.forEach(({
   console.log('Total gain over timeframe:', currency.format(gain));
 
   console.log('\nSection 104 Pool:');
+  const poolInfo = [
+    `${asset.header()}: ${asset.formatAmountBare(pool.qty)}`,
+    `Cost: ${currency.format(pool.cost)}`,
+  ];
+  if (pool.qty.gt(ZERO) && pool.cost.gt(ZERO)) {
+    poolInfo.push(`Avg: ${currency.format(pool.cost.div(pool.qty))}`);
+  }
+  console.log(poolInfo.join(' | '));
   console.log(
-    '%s: %s',
-    asset.header(),
-    asset.formatAmountBare(pool.qty)
-  );
-  console.log('Cost:', currency.format(pool.cost));
-  console.log('Fees:', currency.format(fees.total));
-  console.log(
-    'of which buy/sell: %s/%s',
+    'Fees: %s (buy %s, sell %s)',
+    currency.format(fees.total),
     currency.format(fees.buy),
     currency.format(fees.sell)
   );
